@@ -1,8 +1,6 @@
 # Import the pygame module
 import pygame
-
-# Import pygame.locals for easier access to key coordinates
-# Updated to conform to flake8 and black standards
+import random
 from pygame.locals import (
     K_UP,
     K_DOWN,
@@ -13,12 +11,8 @@ from pygame.locals import (
     QUIT,
 )
 
-# Define constants for the screen width and height
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-
-# Define a player object by extending pygame.sprite.Sprite
-# The surface drawn on the screen is now an attribute of 'player'
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
@@ -26,7 +20,6 @@ class Player(pygame.sprite.Sprite):
         self.surf.fill((255, 255, 255))
         self.rect = self.surf.get_rect()
 
-    # Move the sprite based on user keypresses
     def update(self, pressed_keys):
         if pressed_keys[K_UP]:
             self.rect.move_ip(0, -5)
@@ -36,8 +29,6 @@ class Player(pygame.sprite.Sprite):
             self.rect.move_ip(-5, 0)
         if pressed_keys[K_RIGHT]:
             self.rect.move_ip(5, 0)
-
-        # Keep player on the screen
         if self.rect.left < 0:
             self.rect.left = 0
         if self.rect.right > SCREEN_WIDTH:
@@ -46,48 +37,60 @@ class Player(pygame.sprite.Sprite):
             self.rect.top = 0
         if self.rect.bottom >= SCREEN_HEIGHT:
             self.rect.bottom = SCREEN_HEIGHT
-            
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self):
+        super(Enemy, self).__init__()
+        self.surf = pygame.Surface((20, 10))
+        self.surf.fill((255, 255, 255))
+        self.rect = self.surf.get_rect(
+            center=(
+                random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
+                random.randint(0, SCREEN_HEIGHT),
+            )
+        )
+        self.speed = random.randint(5, 20)
+
+    def update(self):
+        self.rect.move_ip(-self.speed, 0)
+        if self.rect.right < 0:
+            self.kill()
+
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    player = Player()
+
+    # Create groups to hold enemy sprites and all sprites
+    # - enemies is used for collision detection and position updates
+    # - all_sprites is used for rendering
+    enemies = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(player)
 
 
-# Initialize pygame
-pygame.init()
+    running = True
 
-# Create the screen object
-# The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-# Instantiate player. Right now, this is just a rectangle.
-player = Player()
-
-# Variable to keep the main loop running
-running = True
-
-# Main loop
-while running:
-    # for loop through the event queue
-    for event in pygame.event.get():
-        # Check for KEYDOWN event
-        if event.type == KEYDOWN:
-            # If the Esc key is pressed, then exit the main loop
-            if event.key == K_ESCAPE:
+    while running:
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    running = False
+            elif event.type == QUIT:
                 running = False
-        # Check for QUIT event. If QUIT, then set running to false.
-        elif event.type == QUIT:
-            running = False
 
-    # Get all the keys currently pressed
-    pressed_keys = pygame.key.get_pressed()
-
-    # Update the player sprite based on user keypresses
-    player.update(pressed_keys)
-
-    # Fill the screen with black
-    screen.fill((0, 0, 0))
-
-    # Draw the player on the screen
-    screen.blit(player.surf,player.rect)
-
-    # Update the display
-    pygame.display.flip()
+        pressed_keys = pygame.key.get_pressed()
+        player.update(pressed_keys)
+        screen.fill((0, 0, 0))
+                # Draw all sprites
+        for entity in all_sprites:
+            screen.blit(entity.surf, entity.rect)
+            screen.blit(player.surf,player.rect)
 
 
+        pygame.display.flip()
+
+
+if __name__ == "__main__":
+    main()
